@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTW Bonnetjes — Voorbelasting Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0d0d; --surface: #161616; --surface2: #1e1e1e;
+  --border: #2a2a2a; --border2: #333; --text: #f0ede8;
+  --muted: #666; --muted2: #888; --green: #2dce7a;
+  --amber: #f5a623; --red: #ff4d4d; --tag-21: #ff6b35; --tag-9: #2dce7a; --tag-0: #666;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; }
+header { padding: 32px 40px 28px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+.logo-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+.logo h1 { font-family: 'Instrument Serif', serif; font-size: clamp(26px, 3.5vw, 42px); font-style: italic; line-height: 1; }
+.logo h1 em { font-style: normal; color: var(--green); }
+.header-meta { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.meta-field { display: flex; flex-direction: column; gap: 4px; }
+.meta-field label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+.meta-field input, .meta-field select { background: var(--surface2); border: 1px solid var(--border2); border-radius: 4px; padding: 7px 11px; font-family: 'Syne', sans-serif; font-size: 12px; color: var(--text); outline: none; transition: border-color 0.2s; }
+.meta-field input:focus, .meta-field select:focus { border-color: var(--green); }
+main { display: grid; grid-template-columns: 1fr 320px; min-height: calc(100vh - 120px); }
+.list-panel { padding: 28px 36px; border-right: 1px solid var(--border); overflow-y: auto; }
+.panel-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.panel-top h2 { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted2); }
+.import-bar { background: var(--surface); border: 1px solid var(--border2); border-radius: 8px; padding: 18px 20px; margin-bottom: 20px; }
+.import-bar-title { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted2); margin-bottom: 10px; }
+.import-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.btn-import { background: var(--green); color: #000; border: none; border-radius: 5px; padding: 9px 16px; font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; cursor: pointer; position: relative; transition: all 0.18s; white-space: nowrap; }
+.btn-import:hover { background: #24b567; }
+.btn-import input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.btn-manual { background: transparent; border: 1px solid var(--border2); color: var(--muted2); border-radius: 5px; padding: 9px 16px; font-family: 'Syne', sans-serif; font-size: 11px; letter-spacing: 0.06em; cursor: pointer; transition: all 0.18s; white-space: nowrap; }
+.btn-manual:hover { border-color: var(--text); color: var(--text); }
+.import-hint { font-size: 10px; color: var(--muted); line-height: 1.6; margin-top: 10px; }
+.filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.filter-btn { padding: 5px 12px; border-radius: 20px; font-size: 11px; font-family: 'Syne', sans-serif; cursor: pointer; border: 1px solid var(--border2); background: transparent; color: var(--muted2); transition: all 0.15s; white-space: nowrap; }
+.filter-btn.active { background: var(--surface2); color: var(--text); border-color: #555; }
+.filter-search { flex: 1; min-width: 140px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 20px; padding: 5px 14px; font-family: 'Syne', sans-serif; font-size: 11px; color: var(--text); outline: none; }
+.filter-search:focus { border-color: var(--green); }
+.bon-table { width: 100%; border-collapse: collapse; }
+.bon-table thead tr { border-bottom: 1px solid var(--border2); }
+.bon-table th { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 0 10px 10px; text-align: left; font-weight: 600; white-space: nowrap; }
+.bon-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.12s; }
+.bon-table tbody tr:hover { background: var(--surface); }
+.bon-table tbody tr.excluded { opacity: 0.35; }
+.bon-table td { padding: 10px; font-size: 12px; vertical-align: middle; }
+.td-date { color: var(--muted2); font-size: 11px; white-space: nowrap; }
+.td-omsch { max-width: 200px; }
+.td-omsch input { background: transparent; border: none; border-bottom: 1px solid transparent; width: 100%; font-family: 'Syne', sans-serif; font-size: 12px; color: var(--text); outline: none; padding: 2px 0; transition: border-color 0.15s; }
+.td-omsch input:focus { border-bottom-color: var(--green); }
+.td-bedrag { text-align: right; white-space: nowrap; }
+.td-btw { text-align: right; color: var(--green); font-weight: 600; white-space: nowrap; }
+.td-btw.zero { color: var(--muted); font-weight: 400; }
+.rate-sel { background: transparent; border: 1px solid var(--border2); border-radius: 3px; padding: 2px 5px; font-family: 'Syne', sans-serif; font-size: 10px; color: var(--muted2); cursor: pointer; }
+.rate-sel.r21 { border-color: rgba(255,107,53,0.4); color: var(--tag-21); }
+.rate-sel.r9  { border-color: rgba(45,206,122,0.4); color: var(--tag-9); }
+.rate-sel.r0  { border-color: rgba(102,102,102,0.4); color: var(--muted); }
+.btn-excl { background: none; border: none; color: var(--muted); cursor: pointer; padding: 3px 5px; font-size: 13px; transition: color 0.15s; line-height: 1; }
+.btn-excl:hover { color: var(--red); }
+.btn-excl.excluded { color: var(--red); }
+.empty-state { text-align: center; padding: 50px 20px; color: var(--muted); }
+.empty-state .big { font-size: 40px; margin-bottom: 10px; }
+.empty-state p { font-size: 12px; line-height: 1.8; }
+.summary-panel { padding: 28px 24px; position: sticky; top: 0; height: calc(100vh - 120px); overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+.sum-title { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+.sum-total { background: var(--green); color: #000; border-radius: 8px; padding: 20px 18px; }
+.st-label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.65; margin-bottom: 6px; }
+.st-amount { font-family: 'Instrument Serif', serif; font-size: 32px; font-style: italic; line-height: 1; }
+.st-sub { font-size: 10px; opacity: 0.55; margin-top: 7px; line-height: 1.5; }
+.sum-card { background: var(--surface); border: 1px solid var(--border2); border-radius: 8px; padding: 16px 18px; }
+.sum-card h3 { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.sum-row { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
+.sum-row:last-child { border-bottom: none; }
+.sr-label { color: var(--muted2); }
+.sr-val { font-weight: 600; }
+.sr-val.green { color: var(--green); }
+.sr-val.amber { color: var(--amber); }
+.sr-val.muted { color: var(--muted); font-weight: 400; }
+.btn-action { width: 100%; padding: 11px; border-radius: 6px; font-family: 'Syne', sans-serif; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; cursor: pointer; border: none; transition: all 0.18s; }
+.btn-belasting { background: var(--amber); color: #000; }
+.btn-belasting:hover { background: #e0941a; }
+.btn-export { background: var(--surface2); color: var(--muted2); border: 1px solid var(--border2); margin-top: 6px; }
+.btn-export:hover { border-color: var(--text); color: var(--text); }
+.excl-note { font-size: 10px; color: var(--muted); text-align: center; margin-top: 4px; line-height: 1.5; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--surface); border: 1px solid var(--green); color: var(--green); padding: 10px 22px; border-radius: 30px; font-size: 11px; letter-spacing: 0.07em; transition: transform 0.3s ease; z-index: 999; white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+@media (max-width: 768px) { main { grid-template-columns: 1fr; } .summary-panel { position: static; height: auto; } .list-panel { padding: 16px; } header { padding: 20px 16px; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <span class="logo-label">KNAB Import · BTW Voorbelasting</span>
+    <h1>BTW <em>Bonnetjes</em></h1>
+  </div>
+  <div class="header-meta">
+    <div class="meta-field"><label>BV naam</label><input type="text" id="bvNaam" placeholder="Uw Bedrijf BV" style="width:170px"></div>
+    <div class="meta-field"><label>Periode</label>
+      <select id="periode" style="width:130px">
+        <option>Q1 2025</option><option>Q2 2025</option><option>Q3 2025</option><option selected>Q4 2025</option><option>Q1 2026</option><option>Q2 2026</option>
+      </select>
+    </div>
+  </div>
+</header>
+<main>
+  <div class="list-panel">
+    <div class="import-bar">
+      <div class="import-bar-title">📥 KNAB Bankafschrift importeren</div>
+      <div class="import-actions">
+        <button class="btn-import">KNAB CSV importeren<input type="file" accept=".csv,.txt" onchange="importKNAB(event)"></button>
+        <button class="btn-manual" onclick="voegToe()">+ Handmatig toevoegen</button>
+      </div>
+      <div class="import-hint">Exporteer je KNAB rekeningafschrift als CSV en importeer het direct hier.<br>Betalingen aan Belastingdienst, verzekeringen en bankkosten worden automatisch uitgesloten (×).</div>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setFilter('alle',this)">Alle</button>
+      <button class="filter-btn" onclick="setFilter('21',this)">21%</button>
+      <button class="filter-btn" onclick="setFilter('9',this)">9%</button>
+      <button class="filter-btn" onclick="setFilter('0',this)">0%</button>
+      <button class="filter-btn" onclick="setFilter('excl',this)">Uitgesloten</button>
+      <input class="filter-search" type="text" placeholder="Zoeken..." oninput="zoek(this.value)">
+    </div>
+    <div class="panel-top"><h2 id="bon-count">0 regels</h2></div>
+    <div id="lijst-wrapper">
+      <div class="empty-state" id="empty-state"><div class="big">🏦</div><p>Importeer je KNAB bankafschrift (CSV)<br>of voeg regels handmatig toe.</p></div>
+      <table class="bon-table" id="bon-table" style="display:none">
+        <thead><tr><th>Datum</th><th>Tegenpartij / Omschrijving</th><th>Betaalwijze</th><th style="text-align:right">Bedrag</th><th>BTW %</th><th style="text-align:right">BTW bedrag</th><th></th></tr></thead>
+        <tbody id="bon-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="summary-panel">
+    <div class="sum-title">Samenvatting</div>
+    <div class="sum-total"><div class="st-label">Totaal voorbelasting (5g)</div><div class="st-amount" id="st-amount">€ 0,00</div><div class="st-sub">Te verrekenen in BTW-aangifte</div></div>
+    <div class="sum-card"><h3>Per BTW-tarief</h3>
+      <div class="sum-row"><span class="sr-label">21% tarief</span><span class="sr-val green" id="s21">€ 0,00</span></div>
+      <div class="sum-row"><span class="sr-label">9% tarief</span><span class="sr-val green" id="s9">€ 0,00</span></div>
+      <div class="sum-row"><span class="sr-label">0% / geen BTW</span><span class="sr-val muted">n.v.t.</span></div>
+    </div>
+    <div class="sum-card"><h3>Totalen</h3>
+      <div class="sum-row"><span class="sr-label">Kosten incl. BTW</span><span class="sr-val" id="t-incl">€ 0,00</span></div>
+      <div class="sum-row"><span class="sr-label">Kosten excl. BTW</span><span class="sr-val" id="t-excl">€ 0,00</span></div>
+      <div class="sum-row"><span class="sr-label">Geïmporteerde regels</span><span class="sr-val" id="t-count">0</span></div>
+      <div class="sum-row"><span class="sr-label">Uitgesloten regels</span><span class="sr-val amber" id="t-excl-count">0</span></div>
+    </div>
+    <div class="sum-card"><h3>Top tegenpartijen (BTW)</h3><div id="top-partijen" style="font-size:11px;color:var(--muted)">—</div></div>
+    <button class="btn-action btn-belasting" onclick="window.open('https://zakelijk.belastingdienst.nl','_blank')">→ Mijn Belastingdienst Zakelijk</button>
+    <button class="btn-action btn-export" onclick="exportCSV()">↓ Export CSV voor boekhouder</button>
+    <button class="btn-action btn-export" onclick="window.print()">⎙ Afdrukken / PDF</button>
+    <div class="excl-note">Klik × om een regel uit te sluiten van BTW-berekening.</div>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+let bonnetjes=[],nextId=1,actieveFilter='alle',zoekTekst='';
+function importKNAB(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){const text=e.target.result;const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>0);const sep=lines[0].includes(';')?';':',';let headerIdx=-1;for(let i=0;i<Math.min(6,lines.length);i++){const lower=lines[i].toLowerCase();if(lower.includes('transactiedatum')||(lower.includes('datum')&&lower.includes('bedrag'))){headerIdx=i;break;}}if(headerIdx===-1){showToast('Headerrij niet herkend');return;}const headers=parseLine(lines[headerIdx],sep).map(h=>h.toLowerCase().trim());const iDatum=findCol(headers,['transactiedatum','datum']);const iBedrag=findCol(headers,['bedrag']);const iCD=findCol(headers,['creditdebet','credit/debet','cd']);const iOmsch=findCol(headers,['omschrijving','description']);const iTegen=findCol(headers,['tegenrekeninghouder','naam tegenpartij','tegenpartij']);const iBetaal=findCol(headers,['betaalwijze','type']);let imported=0;for(let i=headerIdx+1;i<lines.length;i++){if(!lines[i].trim())continue;const cols=parseLine(lines[i],sep);if(cols.length<4)continue;const cd=iCD>=0?(cols[iCD]||'').toUpperCase().trim():'D';if(cd!=='D')continue;const datumRaw=iDatum>=0?(cols[iDatum]||''):'';const datum=parseDatum(datumRaw.trim());if(!datum)continue;const bedragStr=iBedrag>=0?(cols[iBedrag]||'0'):'0';const bedrag=parseFloat(bedragStr.replace(',','.').trim());if(isNaN(bedrag)||bedrag<=0)continue;const omsch=iOmsch>=0?(cols[iOmsch]||''):'';const tegenp=iTegen>=0?(cols[iTegen]||''):'';const betaalw=iBetaal>=0?(cols[iBetaal]||''):'';const label=tegenp.trim()||omsch.trim()||'—';bonnetjes.push({id:nextId++,datum,omschrijving:label,detail:omsch.trim(),betaalwijze:betaalw.trim(),bedrag_incl:bedrag,tarief:autoTarief(label,betaalw,omsch),uitgesloten:autoUitsluiten(label,omsch)});imported++;}render();showToast(imported+' regels geladen · '+bonnetjes.filter(b=>b.uitgesloten).length+' auto-uitgesloten');};reader.readAsText(file,'UTF-8');event.target.value='';}
+function findCol(h,c){for(const k of c){const i=h.findIndex(x=>x.includes(k));if(i>=0)return i;}return -1;}
+function parseLine(line,sep){const r=[];let cur='',inQ=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){inQ=!inQ;}else if(c===sep&&!inQ){r.push(cur.trim());cur='';}else{cur+=c;}}r.push(cur.trim());return r;}
+function parseDatum(s){const m1=s.match(/^(\d{2})-(\d{2})-(\d{4})$/);if(m1)return m1[3]+'-'+m1[2]+'-'+m1[1];const m2=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(m2)return s;const m3=s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);if(m3)return m3[3]+'-'+m3[2]+'-'+m3[1];return null;}
+function autoTarief(label,betaalwijze,omsch){const l=(label+' '+betaalwijze+' '+omsch).toLowerCase();if(l.includes('tank')||l.includes('tinq')||l.includes('shell')||l.includes('esso')||l.includes('bp ')||l.includes('jet-tank')||l.includes('makro dft')||l.includes('formule 2')||l.includes('star ')||l.includes('lm energy')||l.includes('onbemand tanken')||l.includes('radius')||l.includes('flitsmeister')||l.includes('kvk')||l.includes('kamer van koophandel')||l.includes('q-park')||l.includes('parking')||l.includes('park'))return 21;if(l.includes('belastingdienst')||l.includes('unive')||l.includes('cjib')||l.includes('pakketkosten')||l.includes('knab')||l.includes('verzekering'))return 0;if(l.includes('sport')||l.includes('lunch')||l.includes('diner')||l.includes('restaurant')||l.includes('anne&max')||l.includes('kaag'))return 9;return 21;}
+function autoUitsluiten(label,omsch){const l=(label+' '+omsch).toLowerCase();return l.includes('belastingdienst')||l.includes('pakketkosten')||l.includes('unive')||l.includes('cjib')||l.includes('mediation')||l.includes('stichting kring');}
+function voegToe(){bonnetjes.push({id:nextId++,datum:new Date().toISOString().slice(0,10),omschrijving:'',detail:'',betaalwijze:'Handmatig',bedrag_incl:0,tarief:21,uitgesloten:false});render();setTimeout(()=>{const inputs=document.querySelectorAll('.omsch-input');if(inputs.length)inputs[inputs.length-1].focus();},60);}
+function toggleUitsluiten(id){const b=bonnetjes.find(b=>b.id===id);if(b){b.uitgesloten=!b.uitgesloten;render();}}
+function updateTarief(id,val){const b=bonnetjes.find(b=>b.id===id);if(b){b.tarief=parseInt(val);render();}}
+function updateOmsch(id,val){const b=bonnetjes.find(b=>b.id===id);if(b)b.omschrijving=val;}
+function setFilter(f,btn){actieveFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');render();}
+function zoek(v){zoekTekst=v.toLowerCase();render();}
+function gefilterd(){return bonnetjes.filter(b=>{if(actieveFilter==='excl'&&!b.uitgesloten)return false;if(actieveFilter==='21'&&(b.tarief!==21||b.uitgesloten))return false;if(actieveFilter==='9'&&(b.tarief!==9||b.uitgesloten))return false;if(actieveFilter==='0'&&(b.tarief!==0||b.uitgesloten))return false;if(zoekTekst&&!b.omschrijving.toLowerCase().includes(zoekTekst)&&!b.detail.toLowerCase().includes(zoekTekst))return false;return true;});}
+function fmt(n){return '€ '+n.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function btwBedrag(bon){if(bon.uitgesloten||bon.tarief===0)return 0;if(bon.tarief===21)return bon.bedrag_incl-bon.bedrag_incl/1.21;if(bon.tarief===9)return bon.bedrag_incl-bon.bedrag_incl/1.09;return 0;}
+function render(){const list=gefilterd();const empty=document.getElementById('empty-state');const table=document.getElementById('bon-table');const tbody=document.getElementById('bon-tbody');const totaal=bonnetjes.length;document.getElementById('bon-count').textContent=list.length+' regels'+(totaal!==list.length?' (van '+totaal+')':'');if(totaal===0){empty.style.display='block';table.style.display='none';}else{empty.style.display='none';table.style.display='table';}tbody.innerHTML=list.map(bon=>{const btw=btwBedrag(bon);const datumDisp=bon.datum?bon.datum.split('-').reverse().join('-'):'';const rc=bon.tarief===21?'r21':bon.tarief===9?'r9':'r0';return '<tr class="'+(bon.uitgesloten?'excluded':'')+'" id="rij-'+bon.id+'"><td class="td-date">'+datumDisp+'</td><td class="td-omsch"><input class="omsch-input" value="'+escHtml(bon.omschrijving)+'" title="'+escHtml(bon.detail)+'" oninput="updateOmsch('+bon.id+',this.value)"></td><td style="font-size:10px;color:var(--muted);white-space:nowrap">'+escHtml(bon.betaalwijze)+'</td><td class="td-bedrag">'+fmt(bon.bedrag_incl)+'</td><td><select class="rate-sel '+rc+'" onchange="updateTarief('+bon.id+',this.value)"><option value="21" '+(bon.tarief===21?'selected':'')+'>21%</option><option value="9" '+(bon.tarief===9?'selected':'')+'>9%</option><option value="0" '+(bon.tarief===0?'selected':'')+'>0%</option></select></td><td class="td-btw '+(btw===0?'zero':'')+'>'+(btw>0?fmt(btw):'—')+'</td><td><button class="btn-excl '+(bon.uitgesloten?'excluded':'')+'" onclick="toggleUitsluiten('+bon.id+')" title="'+(bon.uitgesloten?'Opnieuw includeren':'Uitsluiten van BTW')+'">×</button></td></tr>';}).join('');renderSamenvatting();}
+function renderSamenvatting(){let incl=0,btw=0,btw21=0,btw9=0;const p={};bonnetjes.forEach(bon=>{if(bon.uitgesloten)return;const b=btwBedrag(bon);incl+=bon.bedrag_incl;btw+=b;if(bon.tarief===21)btw21+=b;if(bon.tarief===9)btw9+=b;const k=bon.omschrijving||'—';p[k]=(p[k]||0)+b;});document.getElementById('st-amount').textContent=fmt(btw);document.getElementById('s21').textContent=fmt(btw21);document.getElementById('s9').textContent=fmt(btw9);document.getElementById('t-incl').textContent=fmt(incl);document.getElementById('t-excl').textContent=fmt(incl-btw);document.getElementById('t-count').textContent=bonnetjes.length;document.getElementById('t-excl-count').textContent=bonnetjes.filter(b=>b.uitgesloten).length;const top=Object.entries(p).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,5);document.getElementById('top-partijen').innerHTML=top.length?top.map(([n,v])=>'<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px" title="'+escHtml(n)+'">'+escHtml(n)+'</span><span style="color:var(--green);font-weight:600;margin-left:8px;white-space:nowrap">'+fmt(v)+'</span></div>').join(''):'<span style="color:var(--muted)">—</span>';}
+function exportCSV(){const rows=[['Datum','Tegenpartij','Betaalwijze','Bedrag incl.','BTW %','BTW bedrag','Bedrag excl.','Uitgesloten']];bonnetjes.forEach(bon=>{const b=btwBedrag(bon);rows.push([bon.datum,bon.omschrijving,bon.betaalwijze,bon.bedrag_incl.toFixed(2),bon.tarief+'%',b.toFixed(2),(bon.bedrag_incl-b).toFixed(2),bon.uitgesloten?'Ja':'Nee']);});const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='btw-'+(document.getElementById('periode').value||'export').replace(' ','-')+'.csv';a.click();showToast('CSV geëxporteerd');}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>{e.preventDefault();const file=e.dataTransfer.files[0];if(file)importKNAB({target:{files:[file],value:''}});});
+</script>
+</body>
+</html>
